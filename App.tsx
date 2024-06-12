@@ -1,118 +1,93 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
+import React, { useState, useEffect } from 'react';
+import { View, Text, FlatList, TouchableOpacity, Modal } from 'react-native';
+import axios from 'axios';
 
-import React from 'react';
-import type {PropsWithChildren} from 'react';
-import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  useColorScheme,
-  View,
-} from 'react-native';
+const App = () => {
+  const [daftarPlanet, setDaftarPlanet] = useState([]);
+  const [nextPage, setNextPage] = useState(null); // Menyimpan URL halaman berikutnya
+  const [selectedPlanet, setSelectedPlanet] = useState(null); // Menyimpan planet yang dipilih
+  const [modalVisible, setModalVisible] = useState(false); // State untuk mengontrol keterlihatan modal
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+  useEffect(() => {
+    fetchData("https://swapi.dev/api/planets/");
+  }, []);
 
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
+  const fetchData = (url) => {
+    axios.get(url)
+      .then((response) => {
+        setDaftarPlanet((prevData) => [...prevData, ...response.data.results]);
+        setNextPage(response.data.next); // Perbarui URL halaman berikutnya
+      })
+      .catch((err) => console.log(err));
+  };
 
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
-}
+  const renderPlanetCard = ({ item }) => {
+    return (
+      <TouchableOpacity onPress={() => selectPlanet(item)}>
+      <View style={{
+              marginHorizontal: 20, 
+              marginTop: 10, 
+              backgroundColor: '#ffffff', 
+              elevation: 2,
+              paddingVertical: 10,
+              paddingLeft: 10,
+              borderRadius: 3}}>
+        <Text>Nama Planet : {item.name}</Text>
+      </View>
+      </TouchableOpacity>
+    );
+  };
 
-function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
+  const selectPlanet = (planet) => {
+    setSelectedPlanet(planet);
+    setModalVisible(true); // Tampilkan modal saat planet dipilih
+  };
 
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+  const closeModal = () => {
+    setModalVisible(false);
+  };
+
+  const loadMoreData = () => {
+    if (nextPage) {
+      fetchData(nextPage);
+    }
   };
 
   return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
+    <View style={{flex:1}}>
+      <Text>Planet List</Text>
+      <FlatList 
+        data={daftarPlanet}
+        keyExtractor={(item) => item.name}
+        renderItem={renderPlanetCard}
+        onEndReached={loadMoreData}
+        onEndReachedThreshold={0.1}
       />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
+      <Modal
+        animationType="slide"
+        transparent={false}
+        visible={modalVisible}
+        onRequestClose={closeModal}
+      >
+        <View style={{ marginTop: 50, padding: 20 }}>
+          <Text style={{ fontSize: 24, fontWeight: 'bold' }}>
+            {selectedPlanet ? selectedPlanet.name : ''}
+          </Text>
+          <Text>Rotation Period: {selectedPlanet ? selectedPlanet.rotation_period : ''}</Text>
+          <Text>Orbital Period: {selectedPlanet ? selectedPlanet.orbital_period : ''}</Text>
+          <Text>Diameter: {selectedPlanet ? selectedPlanet.diameter : ''}</Text>
+          <Text>Climate: {selectedPlanet ? selectedPlanet.climate : ''}</Text>
+          <Text>Gravity: {selectedPlanet ? selectedPlanet.gravity : ''}</Text>
+          <Text>Terrain: {selectedPlanet ? selectedPlanet.terrain : ''}</Text>
+          <Text>Surface Water: {selectedPlanet ? selectedPlanet.surface_water : ''}</Text>
+          <Text>Population: {selectedPlanet ? selectedPlanet.population : ''}</Text>
+          <TouchableOpacity onPress={closeModal} style={{ marginTop: 20 }}>
+            <Text style={{ color: 'blue', textAlign: 'center' }}>Close</Text>
+          </TouchableOpacity>
         </View>
-      </ScrollView>
-    </SafeAreaView>
+      </Modal>
+    </View>
   );
-}
-
-const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-  },
-  highlight: {
-    fontWeight: '700',
-  },
-});
+};
 
 export default App;
